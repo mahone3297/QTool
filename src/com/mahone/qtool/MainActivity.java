@@ -10,6 +10,7 @@ import java.util.Date;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.ContactsContract;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.database.Cursor;
@@ -29,6 +30,9 @@ public class MainActivity extends Activity {
 	public static final String SMS_URI_FAILED = "content://sms/failed";
 	public static final String SMS_URI_QUEUED = "content://sms/queued";
 	
+	public static final String BACKUP_TYPE_SMS = "sms";
+	public static final String BACKUP_TYPE_CONTACT = "contact";
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -42,27 +46,39 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
+	public void backupSms(View view){
+		this.backup(MainActivity.BACKUP_TYPE_SMS);
+	}
+	
+	public void backupContact(View view){
+		this.backup(MainActivity.BACKUP_TYPE_CONTACT);
+	}
+	
 	@SuppressLint("SimpleDateFormat")
-	public void saveSms(View view){
+	private void backup(String type){
 		TextView infoEle = (TextView) this.findViewById(R.id.info);
 		
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 		Date beginTime = new Date();
-		String filename = "sms_backup_" + sdf.format(beginTime) + ".json";
+		String filename = type + "_" + sdf.format(beginTime) + ".json";
 		FileOutputStream fos = this.getStorageFile(filename);
-		int count = this.backupSms(fos);
+		int count = 0; 
+		if (type == MainActivity.BACKUP_TYPE_SMS){
+			count = this.generateFile(Uri.parse(MainActivity.SMS_URI_ALL), "date desc", fos);
+		} else if (type == MainActivity.BACKUP_TYPE_CONTACT){
+			count = this.generateFile(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, "sort_key asc", fos);
+		}
 		Date endTime = new Date();
-		int seconds = (int)((endTime.getTime() - beginTime.getTime()) / 1000); 
+		int seconds = (int)((endTime.getTime() - beginTime.getTime()) / 1000);
 		
 		infoEle.setText("备份结束，耗时" + seconds + "秒，总统有" + count + "条信息，备份文件在目录 Qtool/" + filename);
 	}
 	
 	@SuppressLint("NewApi")
-	private int backupSms(FileOutputStream fos){
+	private int generateFile(Uri uri, String order, FileOutputStream fos){
 		int count = 0;
 		try {
-			Uri uri = Uri.parse(MainActivity.SMS_URI_ALL);
-			Cursor cursor = this.getContentResolver().query(uri, null, null, null, "date desc");
+			Cursor cursor = this.getContentResolver().query(uri, null, null, null, order);
 						
 			if (cursor.moveToFirst()){
 				JsonWriter writer = new JsonWriter(new OutputStreamWriter(fos, "UTF-8"));
