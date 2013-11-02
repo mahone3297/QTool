@@ -72,8 +72,8 @@ public class MainActivity extends Activity {
 				do {
 					int columnCount = cursor.getColumnCount();
 					writer.beginObject();
-					for(int j=0; j<columnCount; j++){
-						writer.name(cursor.getColumnName(j)).value(cursor.getString(j));
+					for(int i=0; i<columnCount; i++){
+						writer.name(cursor.getColumnName(i)).value(cursor.getString(i));
 					}
 					writer.endObject();
 					count++;
@@ -117,12 +117,11 @@ public class MainActivity extends Activity {
 		}
 		
 		File path = Environment.getExternalStoragePublicDirectory("QTool");
-	    File file = new File(path, filename);
 	    path.mkdirs();
+	    File file = new File(path, filename);
 	    
 	    FileOutputStream fos = null;
 	    try {
-	    	path.mkdirs();
 	    	fos = new FileOutputStream(file);
 	    } catch (IOException e) {
 	    	Log.d("qtool", e.getMessage());
